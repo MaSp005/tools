@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>SVG Path Editor</title>
+  <meta name="description" content="A little tools to generate SVG Paths in your browser!">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css/global.css">
+  <style media="screen">
+    * {
+      user-select: none;
+    }
+
+    div#controls {
+      height: calc(100vh - 50px);
+      width: 550px;
+      background: #222;
+      position: absolute;
+      top: 0px;
+      right: 0px;
+      color: white;
+      font-family: sans-serif;
+      overflow-x: visible;
+      overflow-y: scroll;
+      padding-top: 50px;
+    }
+
+    div#controls>top {
+      position: fixed;
+      background: #000A;
+      width: 100%;
+      height: 74px;
+      padding: 4px;
+    }
+
+    div#controls>div#pointlist {
+      margin-top: 80px;
+    }
+
+    div#controls>div#pointlist>div {
+      cursor: pointer;
+      height: 40px;
+      width: calc(100% - 10px);
+      background: #333;
+      margin-top: 10px;
+      padding: 5px;
+    }
+
+    div#controls>div#pointlist>div.selected:hover {
+      background: #666
+    }
+
+    div#controls>div#pointlist>div.selected {
+      background: #555
+    }
+
+    div#controls>div#pointlist>div:hover {
+      background: #444
+    }
+
+    div#controls>div#pointlist>div ts {
+      cursor: copy;
+      user-select: none;
+    }
+
+    div#controls>div#pointlist>div#obj0 ts {
+      cursor: not-allowed;
+    }
+
+    body button:not(.dmbtn) {
+      cursor: pointer;
+      border: 2px solid black;
+      border-radius: 5px;
+      background: #DDD;
+      padding: 2px 10px;
+      font-size: small;
+      color: black;
+    }
+
+    button[disabled] {
+      cursor: not-allowed;
+    }
+
+    svg {
+      position: absolute;
+      top: 50px;
+      left: 0px;
+      width: calc(100vw - 550px);
+      height: calc(100vh - 50px);
+    }
+
+    div#ui {
+      z-index: 1;
+      width: calc(100vw - 550px);
+      height: calc(100vh - 50px);
+      position: absolute;
+      top: 50px;
+      left: 0px;
+      overflow: visible;
+    }
+
+    div#ui circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #BBB;
+      position: absolute;
+      opacity: 0.5;
+      margin: 50px;
+    }
+  </style>
+  <meta content="SVG Path Editor" property="og:title" />
+  <meta content="A little tools to generate SVG Paths in your browser!" property="og:description" />
+  <meta content="https://masp005.dev/tools/svg-path.png" property="og:image" />
+  <meta content="#923cb1" data-react-helmet="true" name="theme-color" />
+</head>
+
+<body>
+  %HEADER%
+  <svg id="final" stroke-width="5" width="1420" height="938"></svg>
+  <div id="ui"></div>
+  <div id="controls">
+    <top>
+      <button onclick="addpoint()">+</button>
+      <button onclick="loop=!loop;this.innerText='Loop: '+loop;update()">Loop: true</button>
+      Stroke: <input type="color" id="stroke" value="#000" onchange="color=this.value;update()">
+      Fill: <input type="color" id="fill" value="#FFF" onchange="fill=this.value;update()">
+      <button type="color" id="filled" value="#FFF"
+        onclick="fillac=!fillac;this.innerText='Filled: '+fillac;update()">Filled: false</button>
+      <br>BG: <input type="color" id="bg" value="#FFF" onchange="bg=this.value;update()">
+      <button onclick="alert('Copy this data: '+JSON.stringify(points));">Copy data</button>
+      <button
+        onclick="inp=prompt('Paste your copied data in here:');if(inp){try{points=JSON.parse()}catch(err){alert('There was an error with your input:')}};update()">Import</button>
+      <button onclick="alert('Here is your svg data: '+svgobj.innerHTML);update()">Export</button>
+      <button
+        onclick="points=(confirm('Are you sure you want to reset?') ? ([{type:0,x:100,y:100},{type:1,x:500,y:100},{type:2,x:500,y:500,sx:100,sy:500}]) : points);update()">Reset</button>
+    </top>
+    <div id="pointlist"></div>
+  </div>
+  <input style="display:none" type="text" value="[]" id="rawcode">
+
+  <script type="text/javascript">
+    var points = [{ type: 0, x: 100, y: 100 }, { type: 1, x: 500, y: 100 }, { type: 2, x: 500, y: 500, sx: 100, sy: 500 }]
+    var loop = true;
+    var selected = 0;
+    var svgobj = document.getElementById('final');
+    var uiobj = document.getElementById('ui');
+    var mdown = false;
+    var second = false;
+    var third = false;
+    var types = ["M", "L", "Q", "C"];
+    var typenames = ["MoveTo", "LineTo", "Quadratic Bézier", "CurveTo"];
+    var color = "black";
+    var fill = "#000";
+    var fillac = false;
+    var bg = "white"
+    document.getElementById('fill').value = "#000"
+    document.getElementById('bg').value = "#FFF"
+    document.body.onmouseup = () => { mdown = false }
+    document.body.onmousemove = e => {
+      if (mdown) {
+        if (second) {
+          if (third) {
+            changepoint(selected, 'tx', event.clientX)
+            changepoint(selected, 'ty', event.clientY - 50)
+          } else {
+            changepoint(selected, 'sx', event.clientX)
+            changepoint(selected, 'sy', event.clientY - 50)
+          }
+        } else {
+          changepoint(selected, 'x', event.clientX)
+          changepoint(selected, 'y', event.clientY - 50)
+        }
+      }
+    }
+    document.body.onkeypress = e => {
+      if (event.charCode == 97) { points[selected][second ? third ? "tx" : "sx" : "x"]-- }
+      if (event.charCode == 100) { points[selected][second ? third ? "tx" : "sx" : "x"]++ }
+      if (event.charCode == 119) { points[selected][second ? third ? "ty" : "sy" : "y"]-- }
+      if (event.charCode == 115) { points[selected][second ? third ? "ty" : "sy" : "y"]++ }
+      update()
+    };
+    function update() {
+      if (points[selected] == undefined) { selected = 0 }
+      let temp = "<path " + (fillac ? "fill='" + fill + "'" : "fill='none'") + " stroke='" + color + "' d='" + (function () {
+        let once = ""
+        for (i = 0; i < points.length; i++) {
+          once += types[points[i].type] + " " + points[i].x + " " + points[i].y + " " + (
+            (points[i].type >= 2) ? points[i].sx + " " + points[i].sy + " " : ""
+          ) + (
+              (points[i].type >= 3) ? points[i].tx + " " + points[i].ty + " " : ""
+            )
+        }
+        once += (loop) ? "Z" : ""
+        return once
+      })() + "'/>"
+      svgobj.innerHTML = temp;
+      svgobj.style.backgroundColor = bg;
+      temp = (function () {
+        let once = ""
+        for (i = 0; i < points.length; i++) {
+          let thistime = `<div id='obj${i}' onclick='selected=${i};update()' \
+            >\
+            ${i}: \
+            <ts onclick="changepoint(${i},\'type\')">${typenames[points[i].type]}</ts> | \
+            X: ${points[i].x} | \
+            Y: ${points[i].y} ` +
+            ((points[i].type >= 2) ? ("| SX: " + points[i].sx + " | SY: " + points[i].sy) : "") +
+            ((points[i].type >= 3) ? (" | TX: " + points[i].tx + " | TY: " + points[i].ty) : "") +
+            `<br>${(i == 0) ? "<button disabled>Delete</button>" : `<button onclick='removepoint(${i})'>Delete</button>`}\
+            ${(i <= 1) ? "<button disabled>▲</button>" : `<button onclick='movepoint(${i},-1)'>▲</button>`}
+            ${(i == points.length - 1 || i == 0) ? "<button disabled>▼</button>" : `<button onclick='movepoint(${i},1)'>▼</button>`}
+            </div>`
+          once += thistime
+        }
+        return once
+      })()
+      document.getElementById('pointlist').innerHTML = temp;
+      temp = (function () {
+        let once = `<circle \
+            style="\
+              left:${points[selected].x - 65}px;\
+              top:${points[selected].y - 65}px;\
+              ${(points[selected].type >= 2) ? "background:#FF7A7A" : ""}\
+            "\
+            onmousedown="mdown = true;second=false;third=false"\
+          ></circle>`
+        if (points[selected].type >= 2) {
+          once += `<circle \
+              style="\
+                left:${points[selected].sx - 65}px;\
+                top:${points[selected].sy - 65}px;\
+                ${(points[selected].type >= 3) ? "background:#FF7A7A" : ""}\
+              "\
+              onmousedown="mdown = true;second=true;third=false"\
+            ></circle>`
+        }
+        if (points[selected].type >= 3) {
+          once += `<circle \
+              style="\
+                left:${points[selected].tx - 65}px;\
+                top:${points[selected].ty - 65}px;\
+              "\
+              onmousedown="mdown = true;second=true;third=true"\
+            ></circle>`
+        }
+        return once;
+      })()
+      uiobj.innerHTML = temp;
+      document.getElementById('obj' + selected).classList.add("selected")
+    }
+    function addpoint(insert) {
+      let temp = {
+        type: 1,
+        x: 10,
+        y: 10
+      }
+      if (insert == undefined) { selected = points.push(temp) - 1 } else { points.splice(insert, 1, temp); selected = insert }
+      update()
+      document.getElementById("controls").scrollTop = document.getElementById("controls").scrollTopMax
+    }
+    function changepoint(num, property, next) {
+      if (num !== 0 && property == "type" && next == undefined) {
+        points[num].type++;
+        if (points[num].type >= types.length) { points[num].type = 0 }
+        if (points[num].type >= 2 && points[num].sx == undefined) { points[num].sx = 100; points[num].sy = 100 }
+        if (points[num].type >= 3 && points[num].tx == undefined) { points[num].tx = 100; points[num].ty = 100 }
+      } else {
+        if (next !== undefined) { points[num][property] = next; }
+      }
+      update()
+    }
+    function removepoint(num) {
+      if (!!num) {
+        points.splice(num, 1);
+        selected = 0;
+      }
+      update()
+    }
+    function movepoint(old, amount) {
+      let temp = points[old + amount]
+      points.splice(old + amount, 1, points[old])
+      points.splice(old, 1, temp)
+      update()
+    }
+    update()
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Term Filter</title>
+  <meta name="description" content="A little tool for filtering out terms in a large list!">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css/global.css">
+  <meta content="Term Filter" property="og:title" />
+  <meta content="A little tool for filtering out terms in a large list!" property="og:description" />
+  <meta content="https://masp005.dev/tools/filter.png" property="og:image" />
+  <meta content="#923cb1" data-react-helmet="true" name="theme-color" />
+  <style>
+    sm {
+      font-size: small;
+    }
+
+    tocheck {
+      line-height: 50%;
+    }
+
+    main {
+      font-size: xxx-large;
+      font-family: nunito;
+      letter-spacing: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  %HEADER%
+  <div class="start">
+    List the words/terms you want to approve one by one split by a comma each
+    <input type="text" class="tocheck" style="width:100%">
+    <button class="startbtn" onclick="start()">Start</button>
+  </div>
+  <main style="display: none;">
+    <tocheck></tocheck><br>
+    <button class="approve" onclick="app()">Approve ◄</button>
+    <button class="undo" onclick="undo()">Undo ▲</button>
+    <button class="deny" onclick="den()">Deny ►</button>
+  </main>
+  <div class="finish" style="display: none;"></div>
+  <script>
+    var tocheck = null;
+    var crnt = 0;
+    var lastdeleted = null;
+    function start() {
+      tocheck = document.querySelector(".tocheck").value.split(/,\ ?/g);
+      document.querySelector("main").style.display = "block";
+      document.querySelector(".start").remove();
+      console.log(tocheck);
+      crnt = 0;
+      next();
+    }
+    function app() {
+      crnt++;
+      lastdeleted = null;
+      next();
+    }
+    function den() {
+      lastdeleted = tocheck[crnt];
+      tocheck.splice(crnt, 1);
+      next();
+    }
+    function undo() {
+      if (lastdeleted) {
+        tocheck.splice(crnt, 0, lastdeleted);
+        next();
+        document.querySelector("tocheck").innerHTML += (" (undone)");
+      }
+    }
+    function next() {
+      if (tocheck[crnt]) document.querySelector("tocheck").innerHTML =
+        tocheck[crnt] + ("<br><sm>Last deny: " + (lastdeleted || "(None)")) + " | Remaining: " + (tocheck.length - crnt) + "</sm>";
+      else {
+        document.querySelector(".finish").innerHTML = `
+          Finished!<br>
+          Remaining list:<br><br>
+          ${tocheck.join(", ")}
+        `;
+        document.querySelector("main").remove();
+        document.querySelector(".finish").style.display = "block";
+      };
+    }
+    document.body.addEventListener("keydown", e => {
+      console.log(e.key);
+      if (e.key == "ArrowLeft") app()
+      else if (e.key == "ArrowRight") den()
+      else if (e.key == "ArrowUp") undo();
+    })
+  </script>
+</body>
+
+</html>

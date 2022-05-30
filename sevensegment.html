@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Seven Segment Displays</title>
+  <meta name="description" content="A little tools to generate seven-segment displays in your browser!">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css/global.css">
+  <meta content="Seven Segment Displays" property="og:title" />
+  <meta content="A little tools to generate seven-segment displays in your browser!" property="og:description" />
+  <meta content="https://masp005.dev/tools/sevensegment.png" property="og:image" />
+  <meta content="#923cb1" data-react-helmet="true" name="theme-color" />
+</head>
+
+<body>
+  %HEADER%
+  <main style="text-align: center;">
+    <p>Supports all numbers, all roman letters except for K, M and W and special characters "'-_,~<br>
+    Character Limit of 350</p>
+    <input type="text" oninput="update()" style="width: 50vw; font-family: monospace"><br><br>
+    Background: <input type="color" id="bg" value="#000000" oninput="update()"><br>
+    On Color: <input type="color" id="on" value="#dd0000" oninput="update()"><br>
+    Off Color: <input type="color" id="off" value="#220000" oninput="update()"><br><br>
+    <canvas></canvas><br><br>
+    <button onclick="download()">Download</button>
+  </main>
+  <script>
+    class SegmentDisplay {
+      constructor(parts, data) {
+        if (![7/*, 8, 9*/].includes(parts)) throw new Error('Invalid number of parts');
+        if (data.length == 1) {
+          if (parts == 7) {
+            this.parts = [
+              "02356789acefgpqsz".includes(data.toLowerCase()),
+              "01234789adhijipquxyz\"".includes(data.toLowerCase()),
+              "013456789abdghijinoqsuvxy".includes(data.toLowerCase()),
+              "0235689bcdegjlostuvyz_".includes(data.toLowerCase()),
+              "0268abcdefghjlnoprtuvxz,".includes(data.toLowerCase()),
+              "045689abcefghlpqstuxy\"'".includes(data.toLowerCase()),
+              "2345689abdefhnopqrstxyz-~".includes(data.toLowerCase())
+            ]
+          }
+        } else if (data.length == parts) {
+          this.parts = data.split("").map(c => "02356789acefgpqsz".includes(c));
+        }
+      }
+      format(pattern) {
+        if (pattern.length != this.parts.length) throw new Error('Invalid pattern length');
+        return pattern.split("").map(p => this.parts["abcdefg".indexOf(p.toLowerCase())] ? 1 : 0).join("");
+      }
+      draw(ctx, x, y, w, h, bg = "#0000", off = "#300", on = "#d00") {
+        console.log(/*ctx, */x, y, w, h, bg, off, on);
+        ctx.fillStyle = bg;
+        ctx.fillRect(x, y, w, h);
+        return this.parts.map((p, i) => {
+          ctx.fillStyle = p ? on : off;
+          let x1 = [w / 8, w - w / 8, w - w / 8, w / 8, 0, 0, w / 8][i],
+            x2 = [w - w / 8, w, w, w - w / 8, w / 8, w / 8, w - w / 8][i],
+            y1 = [0, w / 8, h / 2 + w / 16, h - w / 8, h / 2 + w / 16, w / 8, h / 2 - w / 16][i],
+            y2 = [w / 8, h / 2 - w / 16, h - w / 8, h, h - w / 8, h / 2 - w / 16, h / 2 + w / 16][i];
+          ctx.fillRect(x + x1, y + y1, x2 - x1, y2 - y1);
+          return [p, i, x1, x2, y1, y2];
+        })
+      }
+    }
+    class MultiDisplay {
+      constructor(parts, data) {
+        this.displays = data.split("").map(c => new SegmentDisplay(parts, c));
+      }
+      draw(ctx, x, y, h, bg = "#0000", off = "#300", on = "#d00") {
+        ctx.fillStyle = bg;
+        ctx.fillRect(x, y, (h / 2 + h / 8) * this.displays.length - h / 8, h);
+        this.displays.forEach((d, i) => d.draw(
+          ctx,
+          x + (h / 2 + h / 8) * i,
+          y,
+          h / 2,
+          h,
+          bg, off, on
+        ));
+      }
+    }
+
+    var inp = document.querySelector("input");
+    var bgcol = document.querySelector("#bg");
+    var oncol = document.querySelector("#on");
+    var offcol = document.querySelector("#off");
+    var canvas = document.querySelector('canvas');
+    var ctx = canvas.getContext('2d');
+    var height = canvas.height;
+    function update() {
+      canvas.width = (height / 2 + height / 8) * inp.value.length - height / 8;
+      new MultiDisplay(7, inp.value).draw(ctx, 0, 0, height, bgcol.value, offcol.value, oncol.value);
+    }
+    function download() {
+      var link = document.createElement("a");
+      link.download = inp.value + ".png";
+      link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+      link.click();
+    }
+    update();
+  </script>
+</body>
+
+</html>

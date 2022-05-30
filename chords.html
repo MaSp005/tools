@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Chord Generator</title>
+  <meta name="description" content="A little tool to help you generate musical chords!">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css/global.css">
+  <meta content="Chord Generator" property="og:title" />
+  <meta content="A little tool to help you generate musical chords!" property="og:description" />
+  <meta content="https://masp005.dev/tools/chords.png" property="og:image" />
+  <meta content="#923cb1" data-react-helmet="true" name="theme-color" />
+  <style>
+    :root {
+      --lh: 12px
+    }
+
+    body {
+      text-align: center;
+      font-family: nunito;
+    }
+
+    .sheet {
+      height: 50px;
+      border-top: 1px solid black;
+      border-bottom: 1px solid black;
+      border-left: 5px solid black;
+      border-right: 5px solid black;
+      position: relative;
+    }
+    body.darkmode .sheet {
+      border-top: 1px solid white;
+      border-bottom: 1px solid white;
+      border-left: 5px solid white;
+      border-right: 5px solid white;
+    }
+    .sheet line {
+      display: block;
+      width: 100%;
+      height: 1px;
+      background: black;
+      margin-top: var(--lh);
+    }
+    body.darkmode .sheet line {
+      background: white;
+    }
+    .sheet note {
+      display: inline-block;
+      width: var(--lh);
+      height: var(--lh);
+      border-radius: 50%;
+      background: black;
+      margin-top: 0px;
+      position: absolute;
+      left: calc((var(--x) + 0.5) * var(--lh) * 3);
+    }
+    body.darkmode .sheet note {
+      background: white;
+    }
+    .sheet note.c {
+      top: calc((var(--lh) + .8px) * 4.5)
+    }
+    .sheet note.c::after {
+      content: "-";
+      font-size: 60px;
+      position: relative;
+      top: -39px;
+      left: -6px
+    }
+    .sheet note.cs {
+      top: calc((var(--lh) + .8px) * 4.5)
+    }
+
+    .sheet note.cs::before {
+      content: "#";
+      position: relative;
+      left: -11px;
+      top: -49px
+    }
+
+    .sheet note.cs::after {
+      content: "-";
+      font-size: 60px;
+      position: relative;
+      top: -39px;
+      left: -15px
+    }
+
+    .sheet note.c2 {
+      top: calc((var(--lh) + .8px) * 1)
+    }
+
+    .sheet note.cs2 {
+      top: calc((var(--lh) + .8px) * 1)
+    }
+
+    .sheet note.cs2::before {
+      content: "#";
+      position: relative;
+      left: -13px;
+      top: -4px
+    }
+
+    .sheet note.d {
+      top: calc((var(--lh) + .8px) * 4)
+    }
+
+    .sheet note.ds {
+      top: calc((var(--lh) + .8px) * 4)
+    }
+
+    .sheet note.ds::before {
+      content: "#";
+      position: relative;
+      left: -13px;
+      top: -4px
+    }
+
+    .sheet note.d2 {
+      top: calc((var(--lh) + .8px) * .5)
+    }
+
+    .sheet note.ds2 {
+      top: calc((var(--lh) + .8px) * .5)
+    }
+
+    .sheet note.ds2::before {
+      content: "#";
+      position: relative;
+      left: -13px;
+      top: -4px
+    }
+
+    .sheet note.e {
+      top: calc((var(--lh) + .8px) * 3.5)
+    }
+
+    .sheet note.e2 {
+      top: calc((var(--lh) + .8px) * 0)
+    }
+
+    .sheet note.f {
+      top: calc((var(--lh) + .8px) * 3)
+    }
+
+    .sheet note.fs {
+      top: calc((var(--lh) + .8px) * 3)
+    }
+
+    .sheet note.fs::before {
+      content: "#";
+      position: relative;
+      left: -13px;
+      top: -4px
+    }
+
+    .sheet note.f2 {
+      top: calc((var(--lh) + .8px) * -.5)
+    }
+
+    .sheet note.fs2 {
+      top: calc((var(--lh) + .8px) * -.5)
+    }
+
+    .sheet note.fs2::before {
+      content: "#";
+      position: relative;
+      left: -13px;
+      top: -4px
+    }
+
+    .sheet note.g {
+      top: calc((var(--lh) + .8px) * 2.5)
+    }
+
+    .sheet note.gs {
+      top: calc((var(--lh) + .8px) * 2.5)
+    }
+
+    .sheet note.gs::before {
+      content: "#";
+      position: relative;
+      left: -13px;
+      top: -4px
+    }
+
+    .sheet note.g2 {
+      top: calc((var(--lh) + .8px) * -1)
+    }
+
+    .sheet note.gs2 {
+      top: calc((var(--lh) + .8px) * -1)
+    }
+
+    .sheet note.gs2::before {
+      content: "#";
+      position: relative;
+      left: -13px;
+      top: -4px
+    }
+
+    .sheet note.a {
+      top: calc((var(--lh) + .8px) * 2)
+    }
+
+    .sheet note.as {
+      top: calc((var(--lh) + .8px) * 2)
+    }
+
+    .sheet note.as::before {
+      content: "#";
+      position: relative;
+      left: -13px;
+      top: -4px
+    }
+
+    .sheet note.a2 {
+      top: calc((var(--lh) + .8px) * -1.5)
+    }
+
+    .sheet note.a2::after {
+      content: "-";
+      font-size: 60px;
+      position: relative;
+      top: -39px;
+      left: -7px
+    }
+
+    .sheet note.as2 {
+      top: calc((var(--lh) + .8px) * -1.5)
+    }
+
+    .sheet note.as2::before {
+      content: "#";
+      position: relative;
+      left: -11px;
+      top: -49px
+    }
+
+    .sheet note.as2::after {
+      content: "-";
+      font-size: 60px;
+      position: relative;
+      top: -39px;
+      left: -17px
+    }
+
+    .sheet note.b {
+      top: calc((var(--lh) + .8px) * 1.5)
+    }
+
+    .sheet note.b2 {
+      top: calc((var(--lh) + .8px) * -2)
+    }
+
+    .sheet note.b2::after {
+      content: "-";
+      font-size: 60px;
+      position: relative;
+      top: -33px;
+      left: -7px
+    }
+
+    .piano {
+      width: 280px;
+      height: 100px;
+      border: 2px solid black;
+      position: relative;
+      margin-left: calc(50% - 280px / 2);
+    }
+    body.darkmode .piano {
+      border: 2px solid white;
+    }
+    .piano div.key {
+      display: block;
+      position: absolute;
+      left: calc(var(--x) * 20px);
+    }
+    .piano div.key.white {
+      width:20px;
+      height:20px;
+      border-right: 1px solid black;
+      padding-top: 80px;
+    }
+    body.darkmode .piano div.key.white {
+      border-right: 1px solid white;
+    }
+    .piano div.key.black {
+      width:16px;
+      height:32px;
+      background: black;
+      padding-top: 30px;
+      color:white;
+      font-size: 75%;
+    }
+    body.darkmode .piano div.key.black {
+      background: white;
+      color: black
+    }
+  </style>
+</head>
+
+<body>
+  %HEADER%
+  <select id="scale" onchange="calc()">
+    <option value="wwhwwwh">Major</option>
+    <option value="whwwhww">Minor</option>
+    <option value="hhhhhhhhhhhh">Chromatic</option>
+    <option value="whwwwhw">Dorian</option>
+    <option value="hwwwhww">Phrygian</option>
+    <option value="wwwhwwh">Lydian</option>
+    <option value="wwhwwhw">Mixolydian</option>
+    <option value="hwwhwww">Locrian</option>
+  </select>
+  <select id="chord" onchange="calc()">
+    <option value="1,3,5">Triad</option>
+    <option value="1,3,5,7">7th</option>
+    <option value="1,4,5">Sus4</option>
+    <option value="1,2,5">Sus2</option>
+    <option value="8,3,5">Inversion</option>
+    <!-- <option value="1,3,5,7m">Flat 7</option> -->
+    <!-- <option value="1,3,5+">Augmented</option> -->
+    <!-- <option value="1,3,5-">Diminished</option> -->
+  </select><br>
+  <input type="text" id="note" onkeyup="calc()"><br><br>
+  <div class="result"></div>
+  <br><br>
+  <!-- <img src="http://assets.classicfm.com/2018/13/circle-of-fifths--1523016231.jpg" alt="" height="200"> -->
+  <script defer>
+    const notes = "C,C# / Db,D,D# / Eb,E,F,F# / Gb,G,G# / Ab,A,A# / Bb,B".split(",");
+    const output = document.querySelector(".result");
+    function calc(draw = true, iscale, inote, ichord) {
+      iscale = iscale || document.querySelector("#scale").value;
+      inote = inote || document.querySelector("#note").value;
+      ichord = ichord || document.querySelector("#chord").value || "135";
+      inote = inote.charAt(0).toUpperCase() + inote.slice(1);
+      inote = notes.find(n => (
+        n.includes(" / ") ?
+          n.split(" / ").includes(inote) :
+          n == inote
+      ))
+      if (!inote) return output.innerHTML = "Please enter a valid Note to form a chord";
+      let cnote = inote.toString();
+      let scale = [[cnote, 0]];
+      let octave = false;
+      iscale.split("").forEach((d, i) => {
+        let nnote = (notes.indexOf(cnote) + (d == "w" ? 2 : 1));
+        if (nnote >= notes.length) octave = true;
+        cnote = notes[nnote % notes.length];
+        scale.push([cnote, octave]);
+      });
+      delete cnote;
+      let chord = ichord.split(",").map(n => /*n.endsWith("m") ? notes[notes.indexOf(scale[parseInt(n)]) + (notes.length-1) % notes.length] : */scale[parseInt(n)-1]);
+      chord = chord.filter(x=>!!x);
+      if (draw) {
+        let html = (
+          "Scale: " + scale.map(n => n[0]).join(", ") +
+          "<br><br><div class='sheet'><line></line><line></line><line></line>" +
+          scale.map((n, i) => (`<note class='${n[0].replace("#", "s").split(" / ")[0].toLowerCase()}${n[1] ? "2" : ""}' style='--x:${i}'></note>`)).join("") +
+          "</div><br><br><div class='sheet'><line></line><line></line><line></line>" +
+          chord.map(n => {
+            return (typeof n[0] !== "undefined" ?
+              (`<note class='${n[0].replace("#", "s").split(" / ")[0].toLowerCase()}${n[1] ? "2" : ""}' style='--x:0'></note>`) :
+              "")
+          }).join("") +
+          "</div><br><br>Chord:<br><div class='piano'>" +
+          notes.map(n =>
+            "<div class='key " + (n.includes("/") ? "black" : "white") +
+            "' style='--x:" + (n.includes("/") ? (notes.filter(m => !m.includes("/")).indexOf(n.charAt(0)) + .6) : (notes.filter(m => !m.includes("/")).indexOf(n))) + "'>" +
+            (chord.find(m => m[0] == n && !m[1]) ? n.replace(" / ", "<br>") : "") + "</div>"
+          ).join("") +
+          notes.map(n =>
+            "<div class='key " + (n.includes("/") ? "black" : "white") +
+            "' style='--x:" + ((n.includes("/") ? (notes.filter(m => !m.includes("/")).indexOf(n.charAt(0)) + .6) : (notes.filter(m => !m.includes("/")).indexOf(n))) + 7) + "'>" +
+            (chord.find(m => m[0] == n && m[1]) ? n.replace(" / ", "<br>") : "") + "</div>"
+          ).join("") +
+          "</div>"
+        );
+        output.innerHTML = html;
+      }
+      return { scale: scale, chord: chord };
+    };
+    calc();
+  </script>
+</body>
+
+</html>

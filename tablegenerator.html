@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Table Generator</title>
+  <meta name="description" content="A little tools to generate tables out of JSON or CSV files!">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css/global.css">
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+
+    thead {
+      background-color: #ddd;
+      color: black;
+      font-weight: bold;
+    }
+
+    prog {
+      display: none
+    }
+  </style>
+  <meta content="Table Generator" property="og:title" />
+  <meta content="A little tools to generate tables out of JSON or CSV files!" property="og:description" />
+  <meta content="https://masp005.dev/tools/tablegenerator.png" property="og:image" />
+  <meta content="#923cb1" data-react-helmet="true" name="theme-color" />
+</head>
+
+<body>
+  %HEADER%
+  <main style="text-align: center;">
+    <p>Enter an Array of JSON objects or a CSV file and hit "Generate" to turn it into a table</p>
+    <select id="type">
+      <option value="json">JSON</option>
+      <option value="csv">CSV</option>
+    </select><br>
+    <textarea id="json"></textarea><br>
+    <p>or select a JSON / CSV file here</p>
+    <input type="file" id="upload"><br>
+    <prog></prog><br><br>
+    <button onclick="gen()">Generate</button><br><br>
+    <p id="error"></p>
+    <table></table>
+  </main>
+  <script>
+    document.querySelector("#upload").addEventListener('change', function () {
+      // files that user has chosen
+      var all_files = this.files;
+      if (all_files.length == 0) {
+        alert('Error : No file selected');
+        return;
+      }
+      var file = all_files[0];
+      var allowed_types = ['application/json', 'text/csv'];
+      if (!allowed_types.includes(file.type)) {
+        return document.getElementById("error").innerHTML = 'Error: Incorrect file type';
+      }
+      // var max_size_allowed = 2 * 1024 * 1024
+      // if (file.size > max_size_allowed) {
+      //   return document.getElementById("error").innerHTML = 'Error: Exceeded size 2MB';
+      // }
+
+      var reader = new FileReader();
+      reader.addEventListener('load', function (e) {
+        document.getElementById("json").value = e.target.result;
+        document.getElementById("type").value = file.type.split("/")[1];
+        gen();
+      });
+      reader.addEventListener('progress', function (e) {
+        if (e.lengthComputable == true) {
+          document.querySelector("prog").innerHTML = Math.floor((e.loaded / e.total) * 100) + "%";
+          document.querySelector("prog").style.display = 'block';
+        }
+      });
+      reader.addEventListener('error', function () {
+        return document.getElementById("error").innerHTML = 'Error : Failed to read file';
+      });
+      reader.readAsText(file);
+    });
+
+    function gen() {
+      var raw = document.getElementById("json").value;
+      let data = [];
+      let type = document.getElementById("type").value;
+
+      if (type == "json") {
+        try { data = JSON.parse(raw); }
+        catch (e) { return document.getElementById("error").innerHTML = "Invalid JSON: " + e; }
+        console.log(data, data.constructor.name);
+        if (data.constructor.name !== "Array") return document.getElementById("error").innerHTML = "JSON must be Array of Objects";
+        document.getElementById("error").innerHTML = "";
+
+        var table = document.getElementsByTagName("table")[0];
+        table.innerHTML = "";
+
+        let headings = new Set();
+        data.forEach(i => Object.keys(i).forEach(j => headings.add(j)))
+        headings = Array.from(headings);
+
+        var thead = document.createElement("thead");
+        headings.forEach(i => {
+          var row = document.createElement("td");
+          row.innerHTML = i;
+          thead.appendChild(row);
+        })
+        table.appendChild(thead);
+
+        var tbody = document.createElement("tbody");
+        data.forEach(i => {
+          var row = document.createElement("tr");
+          headings.forEach(j => {
+            var cell = document.createElement("td");
+            cell.innerHTML = i[j] || "";
+            row.appendChild(cell);
+          })
+          tbody.appendChild(row);
+        })
+        table.appendChild(tbody);
+      } else if (type == "csv") {
+        document.getElementById("error").innerHTML = "";
+
+        var table = document.getElementsByTagName("table")[0];
+        table.innerHTML = "";
+        var lines = raw.split("\n").filter(i => !i.startsWith("#") && i);
+        let headings = lines[0].split(",");
+        lines.shift();
+        var thead = document.createElement("thead");
+        headings.forEach(i => {
+          var row = document.createElement("td");
+          row.innerHTML = i;
+          thead.appendChild(row);
+        })
+        table.appendChild(thead);
+
+        var tbody = document.createElement("tbody");
+        lines.forEach(i => {
+          var row = document.createElement("tr");
+          let col = i.split(",");
+          col.forEach((j, k) => {
+            if (j.startsWith('"')) {
+              col[k] += "," + col[k + 1];
+              col[k] = col[k].replace(/"/g, "");
+            }
+            if (j.endsWith('"')) col.splice(k, 1);
+          })
+          col.forEach(j => {
+            var cell = document.createElement("td");
+            cell.innerHTML = j;
+            row.appendChild(cell);
+          })
+          tbody.appendChild(row);
+        })
+        table.appendChild(tbody);
+      }
+    }
+  </script>
+</body>
+
+</html>
