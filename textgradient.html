@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Minecraft Text Gradient</title>
+  <meta name="description" content="A little tool to generate Minecraft JSON for Gradient colored text!">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css/global.css">
+  <meta content="Minecraft Text Gradient" property="og:title" />
+  <meta content="A little tool to generate Minecraft JSON for Gradient colored text!" property="og:description" />
+  <meta content="https://masp005.dev/tools/textgradient.png" property="og:image" />
+  <meta content="#923cb1" data-react-helmet="true" name="theme-color" />
+  <style>
+    @font-face {
+      font-family: Minecraftia;
+      src: url(/minecraftia.ttf) format("truetype");
+    }
+
+    .colors,
+    .prop,
+    p {
+      width: fit-content;
+      margin: 0 auto;
+      display: block;
+    }
+
+    .output {
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      font-family: Minecraftia;
+    }
+
+    .cmd {
+      font-family: monospace;
+      padding: 10px;
+      background: #171717;
+      border-radius: 10px;
+      width: 80%;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+
+<body>
+  %HEADER%
+  <p>Text: <input type="text" class="text"></p>
+  <div class="colors">
+    <input type="color" class="color">
+    <input type="color" class="color">
+  </div><br>
+  <p>Preset: <input type="text" class="preset" value="/tellraw @p [%s]"></p><br>
+  <div class="prop">
+    Bold <input type="checkbox" class="bold"><br>
+    Italic <input type="checkbox" class="italic"><br>
+    Underlined <input type="checkbox" class="underlined"><br>
+    Strikethrough <input type="checkbox" class="strikethrough"><br>
+    Obfuscated <input type="checkbox" class="obfuscated">
+  </div><br>
+  <p class="output"></p><br>
+  <p class="cmd"></p>
+  <script>
+    const output = document.querySelector(".output");
+    const cmd = document.querySelector(".cmd");
+    document.querySelectorAll("input").forEach(x => {
+      x.addEventListener("input", () => { update() })
+    })
+
+    function update() {
+      let preset = document.querySelector(".preset").value;
+      let text = document.querySelector(".text").value;
+      let col1 = document.querySelector(".colors").children[0].value;
+      let col2 = document.querySelector(".colors").children[1].value;
+      console.log(text, col1, col2);
+      console.log(output.style.backgroundImage = "linear-gradient(to right, " + col1 + ", " + col2 + ")");
+      output.innerHTML = text;
+      let props = [...document.querySelector(".prop").children].filter(x => x.tagName == "INPUT");
+      let prop = {};
+      props.forEach(x => { if (x.checked) prop[x.className] = x.checked });
+      let canv = document.createElement("canvas");
+      let ctx = canv.getContext("2d");
+      let grad = ctx.createLinearGradient(0, 0, canv.width = text.length, 0);
+      grad.addColorStop(0, col1);
+      grad.addColorStop(1, col2);
+      canv.height = 1;
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canv.width, 1);
+      let data = ctx.getImageData(0, 0, canv.width, 1).data;
+      cmd.innerHTML = preset.replace("%s", text.split("").map((t, i) => JSON.stringify({
+        text: t,
+        color: "#" + [data[i * 4], data[i * 4 + 1], data[i * 4 + 2]].map(x => x.toString(16).padStart(2, "0")).join(""),
+        ...prop
+      })));
+    }
+
+    update()
+  </script>
+</body>
+
+</html>

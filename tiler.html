@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Tiler</title>
+  <meta name="description" content="A little tool to help you tile around any image!">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css/global.css">
+  <meta content="Tiler" property="og:title" />
+  <meta content="A little tool to help you tile around any image!" property="og:description" />
+  <meta content="https://masp005.dev/tools/tiler.png" property="og:image" />
+  <meta content="#923cb1" data-react-helmet="true" name="theme-color" />
+  <style>
+    p, h2 {
+      display: block;
+      margin: 0 auto;
+      width: fit-content;
+    }
+  </style>
+</head>
+
+<body>
+  %HEADER%<br>
+  <h2>Image Tiler</h2><br>
+  <p class="input">
+    Upload an Image: <input type="file"><br>
+    Or Paste a URL: <input type="text"><br>
+  </p>
+  <canvas width="800" height="10"></canvas><br>
+  <div class="settings">
+    <p>Tile X: <input type="number" id="x" min="1" value="1"></p>
+    <p>Tile Y: <input type="number" id="y" min="1" value="1"></p>
+  </div>
+  <p><button class="save">Save</button></p>
+  <script defer>
+    const canvas = document.querySelector("canvas"),
+      ctx = canvas.getContext("2d");
+
+    let inw = 0,
+      inh = 0,
+      img;
+
+    document.querySelector("input[type=file]").addEventListener('change', e => {
+      document.querySelector("p.input").style.display = "none";
+      var reader = new FileReader();
+      reader.onload = function (event) {
+        loadimage(event.target.result);
+      }
+      reader.readAsDataURL(e.target.files[0]);
+    }, false);
+    document.querySelector("input[type=text]").addEventListener('change', e => {
+      let fin = e.target.value;
+      // if (!fin.startsWith(/https?\:\/\//)) fin = "https://" + fin;
+      console.log(fin);
+      loadimage(fin);
+    }, false);
+
+    function loadimage(inp) {
+      img = new Image();
+      img.onload = function () {
+        canvas.width = inw = img.width;
+        canvas.height = inh = img.height;
+        ctx.drawImage(img, 0, 0);
+      }
+      img.src = inp;
+    }
+
+    document.querySelectorAll("input[type=number]").forEach(x => {
+      x.addEventListener("change", () => { update() })
+    })
+
+    document.querySelector("button.save").addEventListener("click", e => {
+      e.target.innerHTML = "Converting...";
+      let a = document.createElement("a");
+      a.href = canvas.toDataURL();
+      a.download = "tiled.png";
+      a.click();
+    })
+
+    function update() {
+      let w = parseInt(document.querySelector("#x").value);
+      let h = parseInt(document.querySelector("#y").value);
+      canvas.width = inw * w;
+      canvas.height = inh * h;
+      for (x = 0; x < w; x++) {
+        for (y = 0; y < h; y++) {
+          ctx.drawImage(img, inw * x, inh * y);
+        }
+      }
+    }
+  </script>
+</body>
+
+</html>
